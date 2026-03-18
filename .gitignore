@@ -1,0 +1,10 @@
+# Ignore Executables
+*.exe
+*.out
+student_system
+
+# Ignore Data Files (Optional: keep if you want demo data)
+# students.dat
+
+# Ignore VS Code folders
+.vscode/
