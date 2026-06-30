@@ -346,15 +346,22 @@ void generateHTML() {
     float totalMarks = 0;
     float highest = -1;
     char topper[50] = "N/A";
+    int passed = 0;
+    int failed = 0;
 
     if (fp == NULL) {
         printf("No records found!\n");
         return;
     }
 
-    while (fread(&s, sizeof(struct Student), 1, fp)) {
-        totalStudents++;
-        totalMarks += s.marks;
+   while (fread(&s, sizeof(struct Student), 1, fp)) {
+    totalStudents++;
+    totalMarks += s.marks;
+
+        if (s.marks >= 40)
+            passed++;
+        else
+            failed++;
 
         if (s.marks > highest) {
             highest = s.marks;
@@ -368,22 +375,24 @@ void generateHTML() {
 
     rewind(fp);
 
-    fprintf(web, "<html><head><style>");
-    fprintf(web, "body{font-family:Arial;background:#f4f7f6;text-align:center;margin:0;padding:20px;}");
-    fprintf(web, ".card{display:inline-block;background:white;padding:20px;margin:10px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.1);min-width:180px;}");
-    fprintf(web, "table{width:85%%;margin:30px auto;border-collapse:collapse;background:white;box-shadow:0 0 20px rgba(0,0,0,0.1);}");
-    fprintf(web, "th{background:#007bff;color:white;padding:15px;}");
-    fprintf(web, "td{padding:12px;border-bottom:1px solid #ddd;}");
-    fprintf(web, "</style></head><body>");
+    fprintf(web, "<html>\n<head>\n<style>\n");
+    fprintf(web, "body{font-family:Arial;background:#f4f7f6;text-align:center;margin:0;padding:20px;}\n");
+    fprintf(web, ".card{display:inline-block;background:white;padding:20px;margin:10px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.1);min-width:180px;}\n");
+    fprintf(web, "table{width:85%%;margin:30px auto;border-collapse:collapse;background:white;box-shadow:0 0 20px rgba(0,0,0,0.1);}\n");
+    fprintf(web, "th{background:#007bff;color:white;padding:15px;}\n");
+    fprintf(web, "td{padding:12px;border-bottom:1px solid #ddd;}\n");
+    fprintf(web, "</style>\n</head>\n<body>\n");
 
-    fprintf(web, "<h1>Student Management Dashboard</h1>");
+    fprintf(web, "<h1>Student Management Dashboard</h1>\n");
 
     fprintf(web, "<div class='card'><h3>Total Students</h3><p>%d</p></div>", totalStudents);
     fprintf(web, "<div class='card'><h3>Average Marks</h3><p>%.2f</p></div>", average);
     fprintf(web, "<div class='card'><h3>Topper</h3><p>%s</p></div>", topper);
+    fprintf(web, "<div class='card'><h3>Passed</h3><p>%d</p></div>", passed);
+    fprintf(web, "<div class='card'><h3>Failed</h3><p>%d</p></div>", failed);
 
-    fprintf(web, "<table>");
-    fprintf(web, "<tr><th>Roll No</th><th>Name</th><th>Marks</th></tr>");
+    fprintf(web, "<table>\n");
+    fprintf(web, "<tr><th>Roll No</th><th>Name</th><th>Marks</th></tr>\n");
 
     while (fread(&s, sizeof(struct Student), 1, fp)) {
         fprintf(
@@ -395,12 +404,11 @@ void generateHTML() {
         );
     }
 
-    fprintf(web, "</table>");
-    fprintf(web, "<p>Database Status: Active</p>");
-    fprintf(web, "</body></html>");
-
+    fprintf(web, "</table>\n");
+    fprintf(web, "<p>Database Status: Active</p>\n");
+    fprintf(web, "</body>\n</html>\n");
     fclose(fp);
     fclose(web);
 
-    printf("\n[SYNC] Dashboard updated successfully!\n");
+    printf("\n[SYNC] NEW DASHBOARD GENERATED 12345\n");
 }
