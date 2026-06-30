@@ -1,204 +1,406 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-/*A secure, keyboard-driven Administrative System 
-built in C that manages persistent student records 
-using binary file I/O and random-access memory 
-navigation. Key features include a password-protected
-login, robust input validation, and an automated generator
-that synchronizes terminal data with a styled HTML/CSS web dashboard.*/
-
-#include <stdio.h>   // For standard input and output like printf and scanf
-#include <stdlib.h>  // For system-level functions like exit()
-#include <string.h>  // For string functions like strcmp (comparing text)
-
-// Creating a structure: This acts like a digital 'container' for student info
+// Structure to store student details
 struct Student {
-    int rollNo;      // Integer variable to store the Roll ID
-    char name[50];   // Character array to store the Name (up to 50 letters)
-    float marks;     // Float variable to store marks with decimal points
+    int rollNo;
+    char name[50];
+    float marks;
 };
 
-// Function Prototypes: Telling the compiler these functions exist later in the code
+// Function declarations
 void addStudent();
 void updateData();
 void deleteStudent();
+void searchStudent();
+void generateReport();
 void generateHTML();
-void clearBuffer(); 
+void clearBuffer();
 
 int main() {
-    char password[20]; // Character array to hold the password input
-    char key;          // Character variable to hold the menu key (A, U, D, etc.)
+    char password[20];
+    char key;
 
-    // --- SECURITY LOGIN ---
-    printf("Enter Admin Password: "); // Asking the user for the password
-    scanf("%s", password);           // Reading the text typed by the user
-    clearBuffer();                   // Cleaning the keyboard memory after input
+    // Simple admin login
+    printf("Enter Admin Password: ");
+    scanf("%s", password);
+    clearBuffer();
 
-    // Comparing user input to the secret string "admin123"
-    if (strcmp(password, "admin123") != 0) { 
-        printf("Access Denied!\n");   // If they don't match, print error
-        return 0;                     // Stop the program completely
+    if (strcmp(password, "admin123") != 0) {
+        printf("Access Denied!\n");
+        return 0;
     }
 
-    // --- MAIN INTERFACE LOOP ---
-    while (1) { // 1 means 'True', so this menu keeps repeating
-        printf("\n===================================="); // Visual border
-        printf("\n   KEYBOARD CONTROLLED DASHBOARD");      // Title
-        printf("\n===================================="); // Visual border
-        printf("\n [A] - Add New Record");               // Option A
-        printf("\n [U] - Update Marks/Name");             // Option U
-        printf("\n [D] - Delete a Record");               // Option D
-        printf("\n [W] - Refresh Website (Web)");         // Option W
-        printf("\n [E] - Exit System");                   // Option E
-        printf("\n------------------------------------"); // Visual border
-        printf("\nPRESS A KEY: ");                        // Instruction
+    // Main dashboard loop
+    while (1) {
+        printf("\n========================================");
+        printf("\n      STUDENT MANAGEMENT SYSTEM");
+        printf("\n========================================");
+        printf("\n [A] - Add New Record");
+        printf("\n [U] - Update Record");
+        printf("\n [D] - Delete Record");
+        printf("\n [S] - Search Student");
+        printf("\n [R] - Analytics Report");
+        printf("\n [W] - Refresh Website");
+        printf("\n [E] - Exit");
+        printf("\n----------------------------------------");
+        printf("\nPress a key: ");
 
-        scanf(" %c", &key); // Reading the key (the space before %c is a pro trick to skip white space)
-        clearBuffer();      // Emptying the input buffer to prevent errors
+        scanf(" %c", &key);
+        clearBuffer();
 
-        // Switch case handles the keys (handles both Small and Capital letters)
         switch (key) {
-            case 'a': case 'A': addStudent(); break;      // Jump to Add function
-            case 'u': case 'U': updateData(); break;      // Jump to Update function
-            case 'd': case 'D': deleteStudent(); break;   // Jump to Delete function
-            case 'w': case 'W': generateHTML(); break;    // Jump to HTML function
-            case 'e': case 'E': 
-                printf("Exiting...\n");                   // Print exit message
-                exit(0);                                  // Close program
-            default: 
-                printf("Error: Key '%c' not valid.\n", key); // Handle wrong keys
+            case 'a':
+            case 'A':
+                addStudent();
+                break;
+
+            case 'u':
+            case 'U':
+                updateData();
+                break;
+
+            case 'd':
+            case 'D':
+                deleteStudent();
+                break;
+
+            case 's':
+            case 'S':
+                searchStudent();
+                break;
+
+            case 'r':
+            case 'R':
+                generateReport();
+                break;
+
+            case 'w':
+            case 'W':
+                generateHTML();
+                break;
+
+            case 'e':
+            case 'E':
+                printf("Exiting...\n");
+                exit(0);
+
+            default:
+                printf("Invalid key!\n");
         }
     }
-    return 0; // Return 0 to indicate successful run
+
+    return 0;
 }
 
-// Function to clean the "Input Buffer" (prevents infinite loops and skips)
+// Clears leftover input from keyboard buffer
 void clearBuffer() {
-    int c; // Temporary integer to hold characters
-    // Keep reading every character in the buffer until we hit 'Enter' (\n) or the end
-    while ((c = getchar()) != '\n' && c != EOF); 
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
 }
-
-// Function to Add a Record
+// Add new student record
 void addStudent() {
-    // fopen opens 'students.dat'. 'ab' means Append Binary (adds data to the end)
-    FILE *fp = fopen("students.dat", "ab"); 
-    struct Student s; // Create a temporary variable 's' of type Student
+    FILE *fp = fopen("students.dat", "ab+");
+    struct Student s, temp;
+    int exists = 0;
 
-    printf("\n[ADD MODE]");                       // Title for this mode
-    printf("\nEnter Roll No: "); scanf("%d", &s.rollNo); // Save input to rollNo
-    clearBuffer();                                // Clear 'Enter' key from buffer
+    printf("\n[ADD MODE]");
+    printf("\nEnter Roll No: ");
+    scanf("%d", &s.rollNo);
+    clearBuffer();
 
-    printf("Enter Name: "); scanf(" %[^\n]s", s.name); // Read name including spaces
-    clearBuffer();                                      // Clear 'Enter' key from buffer
-
-    // VALIDATION LOOP: Makes sure the user doesn't enter impossible marks
-    do {
-        printf("Enter Marks (0-100): ");          // Ask for marks
-        scanf("%f", &s.marks);                    // Read marks
-        clearBuffer();                            // Clear buffer
-        if (s.marks < 0 || s.marks > 100) printf("Error: Invalid Marks!\n");
-    } while (s.marks < 0 || s.marks > 100);       // Repeat if marks are wrong
-
-    fwrite(&s, sizeof(struct Student), 1, fp);    // Write the whole 's' block into the file
-    fclose(fp);                                   // Close file to save it
-    printf("Record Saved!\n");                    // Success message
-}
-
-// Function to Delete a Record
-void deleteStudent() {
-    FILE *fp = fopen("students.dat", "rb");   // Open existing file for reading
-    FILE *temp = fopen("temp.dat", "wb");    // Create a new empty temporary file
-    struct Student s;                         // Temp student variable
-    int roll, found = 0;                      // Search variable and flag
-
-    if (fp == NULL) { printf("No file found!\n"); return; } // Check if file exists
-
-    printf("\n[DELETE MODE]");                // Title
-    printf("\nRoll No to delete: "); scanf("%d", &roll); // Get target Roll No
-    clearBuffer();                            // Clear buffer
-
-    // Read every record from the old file
-    while (fread(&s, sizeof(struct Student), 1, fp)) {
-        if (s.rollNo != roll) {               // If this is NOT the student to delete...
-            fwrite(&s, sizeof(struct Student), 1, temp); // ...copy them to the temp file
-        } else {
-            found = 1;                        // If it IS the student, skip them (delete)
+    // Check if roll number already exists
+    rewind(fp);
+    while (fread(&temp, sizeof(struct Student), 1, fp)) {
+        if (temp.rollNo == s.rollNo) {
+            exists = 1;
+            break;
         }
     }
 
-    fclose(fp);                               // Close original file
-    fclose(temp);                             // Close temp file
-    remove("students.dat");                   // Delete the old file
-    rename("temp.dat", "students.dat");        // Rename the new 'clean' file to the original name
+    if (exists) {
+        printf("Error: Roll number already exists!\n");
+        fclose(fp);
+        return;
+    }
 
-    if (found) printf("Student Deleted.\n");   // Print result
-    else printf("Not Found.\n");
+    printf("Enter Name: ");
+    scanf(" %[^\n]s", s.name);
+    clearBuffer();
+
+    // Validate marks
+    do {
+        printf("Enter Marks (0-100): ");
+        scanf("%f", &s.marks);
+        clearBuffer();
+
+        if (s.marks < 0 || s.marks > 100)
+            printf("Invalid marks! Try again.\n");
+
+    } while (s.marks < 0 || s.marks > 100);
+
+    fwrite(&s, sizeof(struct Student), 1, fp);
+    fclose(fp);
+
+    printf("Record Saved Successfully!\n");
 }
 
-// Function to Update Record
-void updateData() {
-    // 'rb+' opens the file for both reading and writing (overwriting)
-    FILE *fp = fopen("students.dat", "rb+"); 
-    struct Student s;                        // Temp student variable
-    int roll, found = 0;                     // Search variables
-    char subKey;                             // For choosing Name or Marks update
 
-    if (fp == NULL) return;                  // Error check
+// Delete student record
+void deleteStudent() {
+    FILE *fp = fopen("students.dat", "rb");
+    FILE *temp = fopen("temp.dat", "wb");
 
-    printf("\n[UPDATE MODE]");               // Title
-    printf("\nRoll No to update: "); scanf("%d", &roll); // Get roll no
-    clearBuffer();                           // Clear buffer
+    struct Student s;
+    int roll;
+    int found = 0;
 
-    // Searching through the file
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    printf("\n[DELETE MODE]");
+    printf("\nEnter Roll No to delete: ");
+    scanf("%d", &roll);
+    clearBuffer();
+
     while (fread(&s, sizeof(struct Student), 1, fp)) {
-        if (s.rollNo == roll) {              // If we find a match...
-            printf("Update [N]ame or [M]arks? "); // Ask what to change
-            scanf(" %c", &subKey);           // Read choice key
-            clearBuffer();                   // Clear buffer
+        if (s.rollNo != roll) {
+            fwrite(&s, sizeof(struct Student), 1, temp);
+        } else {
+            found = 1;
+        }
+    }
 
-            if (subKey == 'n' || subKey == 'N') { // If user wants to change Name
-                printf("New Name: "); scanf(" %[^\n]s", s.name);
-            } else {                             // If user wants to change Marks
-                printf("New Marks: "); scanf("%f", &s.marks);
+    fclose(fp);
+    fclose(temp);
+
+    remove("students.dat");
+    rename("temp.dat", "students.dat");
+
+    if (found)
+        printf("Student Deleted Successfully!\n");
+    else
+        printf("Student not found!\n");
+}
+
+
+// Update student data
+void updateData() {
+    FILE *fp = fopen("students.dat", "rb+");
+
+    struct Student s;
+    int roll;
+    int found = 0;
+    char choice;
+
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    printf("\n[UPDATE MODE]");
+    printf("\nEnter Roll No to update: ");
+    scanf("%d", &roll);
+    clearBuffer();
+
+    while (fread(&s, sizeof(struct Student), 1, fp)) {
+        if (s.rollNo == roll) {
+            printf("Update [N]ame or [M]arks? ");
+            scanf(" %c", &choice);
+            clearBuffer();
+
+            if (choice == 'n' || choice == 'N') {
+                printf("Enter New Name: ");
+                scanf(" %[^\n]s", s.name);
+                clearBuffer();
+            }
+            else if (choice == 'm' || choice == 'M') {
+                do {
+                    printf("Enter New Marks (0-100): ");
+                    scanf("%f", &s.marks);
+                    clearBuffer();
+
+                    if (s.marks < 0 || s.marks > 100)
+                        printf("Invalid marks! Try again.\n");
+
+                } while (s.marks < 0 || s.marks > 100);
+            }
+            else {
+                printf("Invalid choice!\n");
+                fclose(fp);
+                return;
             }
 
-            // fseek moves the 'file cursor' back so we overwrite the specific record
-            fseek(fp, -sizeof(struct Student), SEEK_CUR); 
-            fwrite(&s, sizeof(struct Student), 1, fp); // Write updated info
-            found = 1;                       // Mark as found
-            break;                           // Stop looking
+            fseek(fp, -sizeof(struct Student), SEEK_CUR);
+            fwrite(&s, sizeof(struct Student), 1, fp);
+
+            found = 1;
+            break;
         }
     }
-    fclose(fp);                              // Close file
-    if(found) printf("Record Updated!\n");   // Final message
-    else printf("Not Found.\n");
+
+    fclose(fp);
+
+    if (found)
+        printf("Record Updated Successfully!\n");
+    else
+        printf("Student not found!\n");
 }
 
-// Function to generate the Web Dashboard
-void generateHTML() {
-    FILE *fp = fopen("students.dat", "rb");  // Open binary data file
-    FILE *web = fopen("index.html", "w");    // Create the HTML website file
-    struct Student s;                        // Temp variable
+// Search student by roll number
+void searchStudent() {
+    FILE *fp = fopen("students.dat", "rb");
+    struct Student s;
+    int roll;
+    int found = 0;
 
-    if (fp == NULL) return;                  // Error check
-
-    // Writing HTML and CSS code directly into the index.html file
-    fprintf(web, "<html><head><style>");     // Start of HTML
-    fprintf(web, "body { font-family: Arial; background: #f4f7f6; text-align: center; }"); // CSS Body
-    fprintf(web, "table { width: 80%%; margin: 40px auto; border-collapse: collapse; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); }"); // CSS Table
-    fprintf(web, "th { background: #007bff; color: white; padding: 15px; }"); // CSS Header
-    fprintf(web, "td { padding: 12px; border-bottom: 1px solid #ddd; }"); // CSS Rows
-    fprintf(web, "</style></head><body>");    // End of Style, start of Body
-    fprintf(web, "<h1>Student Management Dashboard</h1>"); // Title
-    fprintf(web, "<table><tr><th>Roll No</th><th>Full Name</th><th>Marks</th></tr>"); // Table Headers
-
-    // Loop through every student in the file and write a table row for each
-    while (fread(&s, sizeof(struct Student), 1, fp)) {
-        fprintf(web, "<tr><td>%d</td><td>%s</td><td>%.2f%%</td></tr>", s.rollNo, s.name, s.marks);
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
     }
 
-    fprintf(web, "</table><p>Database Status: Active</p></body></html>"); // End tags
-    fclose(fp);                              // Close database
-    fclose(web);                             // Close website file
-    printf("\n[SYNC] Website updated successfully!\n"); // Success message
+    printf("\n[SEARCH MODE]");
+    printf("\nEnter Roll No: ");
+    scanf("%d", &roll);
+    clearBuffer();
+
+    while (fread(&s, sizeof(struct Student), 1, fp)) {
+        if (s.rollNo == roll) {
+            printf("\nStudent Found");
+            printf("\n----------------------");
+            printf("\nRoll No : %d", s.rollNo);
+            printf("\nName    : %s", s.name);
+            printf("\nMarks   : %.2f", s.marks);
+            printf("\n");
+            found = 1;
+            break;
+        }
+    }
+
+    fclose(fp);
+
+    if (!found)
+        printf("Student not found!\n");
+}
+
+
+// Generate analytics report
+void generateReport() {
+    FILE *fp = fopen("students.dat", "rb");
+    struct Student s;
+
+    int totalStudents = 0;
+    int passed = 0;
+    int failed = 0;
+
+    float totalMarks = 0;
+    float highest = -1;
+    char topper[50] = "N/A";
+
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    while (fread(&s, sizeof(struct Student), 1, fp)) {
+        totalStudents++;
+        totalMarks += s.marks;
+
+        if (s.marks >= 40)
+            passed++;
+        else
+            failed++;
+
+        if (s.marks > highest) {
+            highest = s.marks;
+            strcpy(topper, s.name);
+        }
+    }
+
+    fclose(fp);
+
+    float average = 0;
+    if (totalStudents > 0)
+        average = totalMarks / totalStudents;
+
+    printf("\n========== ANALYTICS REPORT ==========");
+    printf("\nTotal Students : %d", totalStudents);
+    printf("\nAverage Marks  : %.2f", average);
+    printf("\nTopper         : %s (%.2f)", topper, highest);
+    printf("\nPassed         : %d", passed);
+    printf("\nFailed         : %d", failed);
+    printf("\n======================================\n");
+}
+
+
+// Generate HTML dashboard
+void generateHTML() {
+    FILE *fp = fopen("students.dat", "rb");
+    FILE *web = fopen("index.html", "w");
+    struct Student s;
+
+    int totalStudents = 0;
+    float totalMarks = 0;
+    float highest = -1;
+    char topper[50] = "N/A";
+
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    while (fread(&s, sizeof(struct Student), 1, fp)) {
+        totalStudents++;
+        totalMarks += s.marks;
+
+        if (s.marks > highest) {
+            highest = s.marks;
+            strcpy(topper, s.name);
+        }
+    }
+
+    float average = 0;
+    if (totalStudents > 0)
+        average = totalMarks / totalStudents;
+
+    rewind(fp);
+
+    fprintf(web, "<html><head><style>");
+    fprintf(web, "body{font-family:Arial;background:#f4f7f6;text-align:center;margin:0;padding:20px;}");
+    fprintf(web, ".card{display:inline-block;background:white;padding:20px;margin:10px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.1);min-width:180px;}");
+    fprintf(web, "table{width:85%%;margin:30px auto;border-collapse:collapse;background:white;box-shadow:0 0 20px rgba(0,0,0,0.1);}");
+    fprintf(web, "th{background:#007bff;color:white;padding:15px;}");
+    fprintf(web, "td{padding:12px;border-bottom:1px solid #ddd;}");
+    fprintf(web, "</style></head><body>");
+
+    fprintf(web, "<h1>Student Management Dashboard</h1>");
+
+    fprintf(web, "<div class='card'><h3>Total Students</h3><p>%d</p></div>", totalStudents);
+    fprintf(web, "<div class='card'><h3>Average Marks</h3><p>%.2f</p></div>", average);
+    fprintf(web, "<div class='card'><h3>Topper</h3><p>%s</p></div>", topper);
+
+    fprintf(web, "<table>");
+    fprintf(web, "<tr><th>Roll No</th><th>Name</th><th>Marks</th></tr>");
+
+    while (fread(&s, sizeof(struct Student), 1, fp)) {
+        fprintf(
+            web,
+            "<tr><td>%d</td><td>%s</td><td>%.2f%%</td></tr>",
+            s.rollNo,
+            s.name,
+            s.marks
+        );
+    }
+
+    fprintf(web, "</table>");
+    fprintf(web, "<p>Database Status: Active</p>");
+    fprintf(web, "</body></html>");
+
+    fclose(fp);
+    fclose(web);
+
+    printf("\n[SYNC] Dashboard updated successfully!\n");
 }
